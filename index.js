@@ -53,6 +53,8 @@ var RX = /** @class */ (function () {
         var inputSorted = input.split(' ').sort();
         var left = 0, right = 1, output = { major: [], moderate: [], minor: [] };
         do {
+            if (inputSorted[left] === inputSorted[left - 1])
+                continue;
             var reaction = this.getInteraction(inputSorted[left], inputSorted[right]);
             if (reaction)
                 output[reaction.severity].push(reaction);
@@ -64,7 +66,6 @@ var RX = /** @class */ (function () {
                 ++right;
             }
         } while (left < right && right < inputSorted.length);
-        console.log(output);
         return output;
     };
     /**
