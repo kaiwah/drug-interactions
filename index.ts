@@ -58,12 +58,12 @@ class RX {
     const inputSorted = input.split(' ').sort();
     let left = 0, right = 1, output = { major: [], moderate: [], minor: [] };
     do {
-      if (inputSorted[left] === inputSorted[left-1])
-        continue;
       const reaction = this.getInteraction(inputSorted[left], inputSorted[right]);
       if (reaction)
         output[reaction.severity].push( reaction );
       if (right === inputSorted.length - 1){
+        if (inputSorted[left+1] === inputSorted[left])
+          ++left; // duplicate -- skip 1
         ++left;
         right = left + 1;
       } else {
