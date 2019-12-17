@@ -43,6 +43,10 @@ Given the format is `word1 word2 word3 word4 ... wordn`
 
 We will need to do pair-processing such that: `word1word2 word1word3 word1word4 ... word1wordn`
 
+In the preprocessing step, we needed to pre-sort the key which will eliminate any variances based on word permutation. With that important key concept in mind, we can also pre-sort the input line/row to the same effect. This will provide 2 benefits:
+1. Support for variances/permutations
+2. Skips duplicate work
+
 _Assuming that all words are *unique*_, then no duplicate work is done. If words are *not* unique, then there will be duplicate work. Best way to combat this is to pre-sort the input and then any duplicates will be next to each other. A duplicate is identified such that `word[i] === word[i-1] ? skip : continue`
 
 Step 3: **Lookup**
