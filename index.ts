@@ -1,5 +1,9 @@
 'use strict';
 
+/* global imports */
+const chalk = require('chalk');
+const log = console.log;
+
 interface DrugJson {
   drugs: string[];
   severity: string;
@@ -10,8 +14,11 @@ interface DrugJson {
  * @description: Main class for handling all drug related functionality */
 class RX {
   drugMap: object;
+  readline: any;
   interactions: DrugJson[];
   constructor(interactionsPath: string = ''){
+    log(chalk.red.bold('Welcome to Ro\'s Drug Interaction Terminal'));
+    this.readline = require('readline');
     this.load(interactionsPath);
     this.preprocess();
   }
@@ -23,7 +30,7 @@ class RX {
    * @description: creates a hashmap of all interaction associations for quick in-memory check
    */
   preprocess(){
-    console.log(`Loading ${this.interactions.length} Interactions`);
+    log(chalk.gray(`+ Loading ${this.interactions.length} Interactions`));
     let drugMap = {};
     for (let i = 0; i < this.interactions.length; ++i){
       const drugs = this.interactions[i].drugs.sort();
@@ -36,7 +43,7 @@ class RX {
       drugMap[drugs.join('')] = i;
     }
     this.drugMap = drugMap;
-    console.log(`Created ${Object.keys(drugMap).length} Assoc mappings`);
+    log(chalk.gray(`+ Created ${Object.keys(drugMap).length} Assoc mappings`));
     return;
   }
   /**
@@ -45,6 +52,8 @@ class RX {
    *  (ASSUMPTION: PRESORTED)
    */
   getInteraction(drug1: string, drug2: string = ''){
+    if (drug1 === drug2) 
+      return false; // same drug 
     const key = drug1+drug2;
     return (this.drugMap.hasOwnProperty(key)) 
       ? this.interactions[ this.drugMap[key] ]
@@ -56,12 +65,25 @@ class RX {
    */
   getAllInteractions(input: string){
     const inputSorted = input.split(' ').sort();
-    let left = 0, right = 1, output = { major: [], moderate: [], minor: [] };
+    let left = 0, right = 1, output = null;
     do {
       const reaction = this.getInteraction(inputSorted[left], inputSorted[right]);
-      if (reaction)
-        output[reaction.severity].push( reaction );
-      if (right === inputSorted.length - 1){
+      if (reaction){
+        switch (reaction.severity){
+          case 'contraindication':
+            reaction.severity = 'major'; // changing to major for consistency
+          case 'major':
+            return reaction; break; // major found, skip everything else
+          case 'moderate':
+            output = reaction; break;
+          default:
+            if (!output)
+              output = reaction;
+        }
+      }
+      if (inputSorted[right+1] === inputSorted[right])
+        ++right; // duplicate -- skip 1
+      if (right >= inputSorted.length - 1){
         if (inputSorted[left+1] === inputSorted[left])
           ++left; // duplicate -- skip 1
         ++left;
@@ -69,7 +91,7 @@ class RX {
       } else {
         ++right;
       }
-    } while (left < right && right < inputSorted.length);
+    } while (left < right && left < inputSorted.length);
     return output;
   } 
   /**
@@ -77,25 +99,59 @@ class RX {
    * @description: displays the most severe interaction based on a line input
    */
   showInteraction(input: string){
-    const results = this.getAllInteractions(input);
-    let context = null;
-    if (results.major.length)
-      context = results.major;
-    else if (results.moderate.length)
-      context = results.moderate;
-    else if (results.minor.length)
-      context = results.minor;
-    return (context)
-      ? context.reduce(( ret, val ) => { return ret += `${val.severity}: ${val.description}`},'')
+    const result = this.getAllInteractions(input.toLowerCase());
+    return (result)
+      ? `${result.severity}: ${result.description}`
       : 'No Interaction';
   }
-
+  /**
+   * @returns null
+   * @description: begins terminal for stdin listening 
+   **/
+  terminal(){
+    let results = [];
+    const _this = this, term = this.readline.createInterface({
+      input: process.stdin,
+      output: process.stdout,
+      terminal: false
+    });
+    
+    log(chalk.cyan('\n# To get started, please type in or paste any combination of drugs where you want to know the effects of.\nPress enter twice to execute the lookup.\n'));
+    term.on('line', (input)=>{
+      if (input !== ''){
+        results.push(this.showInteraction(input));
+      } else {
+        for (const interaction of results){
+          switch (interaction.substring(0,3)){
+            case 'maj':
+              log(chalk.red.bold(interaction)); break;
+            case 'mod':
+              log(chalk.red(interaction)); break;
+            case 'min':
+              log(chalk.yellow(interaction)); break;
+            default:
+              log(chalk.green(interaction));
+          }
+        }
+        results = []; // resetting the inputs
+        log(); // linebreak
+      }
+      return true;
+    });
+    term.on('close', input => {
+      log(chalk.green.bold('goodbye'));
+    });
+  }
 }
 
-/* process the input */
-// todo: cli input here but use static value first
 const Ro = new RX();
+Ro.terminal();
+
+
+// explicit tests for functionality
+//const results = Ro.showInteraction("sildenafil");
+//const results = Ro.showInteraction("tamsulosin lovastatin");
 //const results = Ro.showInteraction("sildenafil tamsulosin lovastatin");
-const results = Ro.showInteraction("sildenafil");
-console.log(results);
+//const results = Ro.showInteraction("sildenafil sildenafil nicotine rescinnamine");
+//log(results);
 

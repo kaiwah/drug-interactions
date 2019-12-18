@@ -3,6 +3,7 @@
 1. Extract Files to Drive
 2. Run `npm install`
 3. Run `npm start`
+4. Follow instructions on screen
 ---
 ### Problem
 Identify any drug to drug interaction that might occur based in a set of inputs
@@ -62,4 +63,17 @@ For the sake of time, the simpler way is Option #1 but shall we run into perform
 Step 4: **Display Results**
 
 Loop through output arraay and display each line
-
+---
+## Test Cases
+```
+sildenafil
+sildenafil thalidomide ibuprofen zopiclone nitroglycerin
+sil
+Sildenafil NitrogLYCERIN
+$%^
+sildenafil sildenafil
+```
+---
+## Optimizations
+**Caching**
+We can potentially cache previous answers since if we know we've seen this pair before in the new combination. Since we are only looking at the most severe reaction, we can cache these answers and retrieve them whenever the pair in the permutation has been detected.
